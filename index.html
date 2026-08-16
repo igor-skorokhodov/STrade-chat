@@ -1123,30 +1123,118 @@ align-self: center;
 
 const chat = document.getElementById('chat');
 
-function toggleMobileChatFullscreen() {
-  if (window.innerWidth > 760) {
-    chat.classList.remove('is-fullscreen-mobile');
+let chatFullscreenLocked = false;
+let touchStartY = 0;
+let touchDeltaY = 0;
+let swipeDownCount = 0;
+let swipeUpCount = 0;
+let lastSwipeDirection = '';
+
+function isMobile() {
+  return window.innerWidth <= 760;
+}
+
+function enableMobileChatFullscreen() {
+  if (!isMobile()) return;
+  chat.classList.add('is-fullscreen-mobile');
+  chatFullscreenLocked = true;
+}
+
+function disableMobileChatFullscreen() {
+  chat.classList.remove('is-fullscreen-mobile');
+  chatFullscreenLocked = false;
+  swipeDownCount = 0;
+  swipeUpCount = 0;
+  lastSwipeDirection = '';
+}
+
+function toggleMobileChatFullscreenOnPageScroll() {
+  if (!isMobile()) {
+    disableMobileChatFullscreen();
     return;
   }
 
+  if (chatFullscreenLocked) return;
+
   const rect = chat.getBoundingClientRect();
-  const headerOffset = 74;     // высота хедера
-  const triggerPoint = 120;    // момент входа в fullscreen
-  const bottomLimit = 140;     // если низ чата почти вышел вверх — выключаем fullscreen
+  const triggerPoint = 120;
+  const chatVisibleEnough = rect.top <= triggerPoint && rect.bottom > 180;
 
-  const reachedChat = rect.top <= triggerPoint;
-  const chatStillVisible = rect.bottom > bottomLimit;
-
-  if (reachedChat && chatStillVisible) {
-    chat.classList.add('is-fullscreen-mobile');
-  } else {
-    chat.classList.remove('is-fullscreen-mobile');
+  if (chatVisibleEnough) {
+    enableMobileChatFullscreen();
   }
 }
 
-window.addEventListener('scroll', toggleMobileChatFullscreen, { passive: true });
-window.addEventListener('resize', toggleMobileChatFullscreen);
-toggleMobileChatFullscreen();
+function handleSwipeAttempt(direction) {
+  if (!chat.classList.contains('is-fullscreen-mobile')) return;
+
+  if (direction === 'down') {
+    if (lastSwipeDirection === 'down') {
+      swipeDownCount++;
+    } else {
+      swipeDownCount = 1;
+      swipeUpCount = 0;
+    }
+    lastSwipeDirection = 'down';
+
+    if (swipeDownCount >= 2) {
+      disableMobileChatFullscreen();
+    }
+  }
+
+  if (direction === 'up') {
+    if (lastSwipeDirection === 'up') {
+      swipeUpCount++;
+    } else {
+      swipeUpCount = 1;
+      swipeDownCount = 0;
+    }
+    lastSwipeDirection = 'up';
+
+    if (swipeUpCount >= 2) {
+      disableMobileChatFullscreen();
+    }
+  }
+}
+
+window.addEventListener('scroll', toggleMobileChatFullscreenOnPageScroll, { passive: true });
+window.addEventListener('resize', () => {
+  if (!isMobile()) {
+    disableMobileChatFullscreen();
+  }
+});
+
+chat.addEventListener('touchstart', (e) => {
+  if (!isMobile()) return;
+  if (!chat.classList.contains('is-fullscreen-mobile')) return;
+
+  touchStartY = e.touches[0].clientY;
+  touchDeltaY = 0;
+}, { passive: true });
+
+chat.addEventListener('touchmove', (e) => {
+  if (!isMobile()) return;
+  if (!chat.classList.contains('is-fullscreen-mobile')) return;
+
+  const currentY = e.touches[0].clientY;
+  touchDeltaY = currentY - touchStartY;
+}, { passive: true });
+
+chat.addEventListener('touchend', () => {
+  if (!isMobile()) return;
+  if (!chat.classList.contains('is-fullscreen-mobile')) return;
+
+  const threshold = 35;
+
+  if (touchDeltaY > threshold) {
+    handleSwipeAttempt('down');
+  } else if (touchDeltaY < -threshold) {
+    handleSwipeAttempt('up');
+  }
+}, { passive: true });
+
+toggleMobileChatFullscreenOnPageScroll();
+
   </script>
 </body>
 </html>
