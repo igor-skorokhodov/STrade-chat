@@ -1,0 +1,1090 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>SkyTrade — чат-лендинг: подбор химического анкера</title>
+  <meta name="description" content="Чат-лендинг для подбора химических анкеров: ответьте на несколько вопросов в чате и получите рекомендацию и КП." />
+
+  <style>
+    :root{
+      --bg: #f6f9fc;
+      --bg-grad: radial-gradient(90% 110% at 0% 0%, rgba(31,94,142,0.06), transparent 60%);
+      --text: #0f172a;
+      --muted: #64748b;
+      --primary: #1f5e8e;
+      --primary-600: #16496f;
+      --line: #e2e8f0;
+      --card: #ffffff;
+      --radius: 16px;
+      --shadow: 0 10px 30px rgba(2, 8, 23, 0.08);
+      --shadow-soft: 0 2px 10px rgba(2, 8, 23, 0.05);
+    }
+
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      margin:0;
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+      color:var(--text);
+      background:var(--bg);
+      background-image:var(--bg-grad);
+      line-height:1.45;
+      -webkit-font-smoothing:antialiased;
+      -moz-osx-font-smoothing:grayscale;
+    }
+    img{max-width:100%;display:block}
+    [hidden]{display:none !important}
+
+    .container{
+      width:100%;
+      max-width:1100px;
+      margin:0 auto;
+      padding:0 16px;
+    }
+
+    /* Header */
+    .header{
+      position:sticky;
+      top:0;
+      z-index:100;
+      backdrop-filter:saturate(1.2) blur(8px);
+      background:rgba(255,255,255,0.85);
+      border-bottom:1px solid rgba(226,232,240,0.8);
+    }
+    .header__row{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:16px;
+      min-height:78px;
+    }
+    .brand{
+      display:flex;
+      align-items:center;
+      gap:14px;
+      text-decoration:none;
+      color:inherit;
+    }
+    .brand__logo{
+      height:54px;
+      width:54px;
+      border-radius:10px;
+      background:#e2e8f0;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      overflow:hidden;
+      flex:0 0 54px;
+    }
+    .brand__logo img{
+      width:100%;
+      height:100%;
+      object-fit:contain;
+    }
+    .brand__text{
+      display:flex;
+      flex-direction:column;
+      line-height:1.1;
+    }
+    .brand__text strong{font-size:18px}
+    .brand__text span{font-size:12px;color:var(--muted)}
+
+    .header__cta{
+      display:flex;
+      align-items:center;
+      gap:10px;
+    }
+    .header__phone{
+      color:var(--text);
+      text-decoration:none;
+      font-weight:700;
+      white-space:nowrap;
+    }
+
+    .btn{
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      height:42px;
+      padding:0 16px;
+      font-weight:600;
+      border-radius:10px;
+      border:1px solid transparent;
+      cursor:pointer;
+      text-decoration:none;
+      transition:.2s;
+      white-space:nowrap;
+    }
+    .btn--primary{background:var(--primary);color:#fff}
+    .btn--primary:hover{background:var(--primary-600)}
+    .btn--ghost{background:#fff;border-color:var(--primary);color:var(--primary)}
+    .btn--ghost:hover{background:rgba(31,94,142,0.06)}
+    .btn--full{width:100%}
+
+    /* UTP */
+    .utp{
+      padding:24px 0 10px;
+    }
+    .utp__box{
+      background:#fff;
+      border:1px solid var(--line);
+      border-radius:20px;
+      box-shadow:var(--shadow);
+      padding:24px;
+    }
+    .utp__title{
+      margin:0 0 10px;
+      font-size:clamp(24px, 4vw, 38px);
+      line-height:1.18;
+    }
+    .utp__title span{
+      color:var(--primary);
+    }
+    .utp__text{
+      margin:0;
+      color:var(--muted);
+      font-size:16px;
+    }
+
+    /* Hero */
+    .hero{
+      padding:18px 0 6px;
+    }
+    .hero__title{
+      margin:12px 0 6px;
+      font-size:clamp(22px, 3vw, 30px);
+      line-height:1.22;
+    }
+    .hero__muted{
+      color:var(--muted);
+      margin:0 0 10px;
+    }
+    .badges{
+      display:flex;
+      gap:8px;
+      flex-wrap:wrap;
+      list-style:none;
+      padding:0;
+      margin:10px 0 0;
+    }
+    .badge{
+      font-size:13px;
+      background:#fff;
+      border:1px solid var(--line);
+      color:var(--text);
+      padding:8px 12px;
+      border-radius:999px;
+    }
+
+    /* Main layout */
+    .chat-wrap{
+      display:grid;
+      grid-template-columns:1.2fr .8fr;
+      gap:16px;
+      align-items:start;
+      margin:14px 0 30px;
+    }
+
+    /* Chat */
+    .chat{
+      background:var(--card);
+      border:1px solid var(--line);
+      border-radius:var(--radius);
+      box-shadow:var(--shadow);
+      display:flex;
+      flex-direction:column;
+      min-height:520px;
+      overflow:hidden;
+    }
+    .chat__head{
+      padding:14px 16px;
+      border-bottom:1px solid var(--line);
+      display:flex;
+      align-items:center;
+      gap:10px;
+      background:linear-gradient(0deg, rgba(31,94,142,0.05), rgba(31,94,142,0.05));
+    }
+    .bot-avatar{
+      min-width:50px;
+      height:50px;
+      border-radius:50%;
+      background:#e2e8f0;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      border:1px solid #cbd5e1;
+      overflow:hidden;
+      flex:0 0 36px;
+align-self: center;
+    }
+    .bot-avatar img{
+      width:100%;
+      height:100%;
+      object-fit:cover;
+    }
+    .chat__title{
+      margin:0;
+      font-weight:700;
+    }
+    .chat__sub{
+      margin:0;
+      color:var(--muted);
+      font-size:12px;
+    }
+    .chat__progress{
+      height:6px;
+      background:#eef2f6;
+      margin:0;
+      width:100%;
+    }
+    .chat__bar{
+      display:block;
+      height:100%;
+      width:0%;
+      background:var(--primary);
+      transition:width .25s;
+    }
+    .chat__body{
+      padding:14px;
+      overflow:auto;
+      display:flex;
+      flex-direction:column;
+      gap:10px;
+      height:420px;
+      scroll-behavior:smooth;
+    }
+
+    .msg{
+      display:flex;
+      gap:10px;
+      align-items:flex-end;
+      max-width:85%;
+    }
+    .msg--bot{align-self:flex-start}
+    .msg--user{
+      align-self:flex-end;
+      flex-direction:row-reverse;
+    }
+    .msg__bubble{
+      background:#fff;
+      border:1px solid var(--line);
+      padding:10px 12px;
+      border-radius:14px;
+      box-shadow:var(--shadow-soft);
+      color:var(--text);
+      font-size:14px;
+    }
+    .msg--user .msg__bubble{
+      background:var(--primary);
+      color:#fff;
+      border-color:transparent;
+    }
+    .msg__time{
+      font-size:11px;
+      color:#94a3b8;
+      margin:0 6px;
+    }
+
+    .msg__product{
+      display:flex;
+      gap:12px;
+      align-items:center;
+      background:#f1f5f9;
+      border:1px solid #e2e8f0;
+      border-radius:12px;
+      padding:10px;
+    }
+    .msg__product-img{
+      width:86px;
+      height:64px;
+      border-radius:10px;
+      background:#fff;
+      border:1px solid #e2e8f0;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      flex:0 0 86px;
+      box-shadow:var(--shadow-soft);
+    }
+    .msg__product h4{
+      margin:0 0 4px;
+      font-size:15px;
+    }
+    .msg__product p{
+      margin:0;
+      color:var(--muted);
+      font-size:12px;
+    }
+
+    .typing{
+      width:46px;
+      height:28px;
+      border-radius:999px;
+      background:#eef2f7;
+      border:1px solid #dde6f0;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      gap:3px;
+      padding:0 8px;
+    }
+    .typing span{
+      width:6px;
+      height:6px;
+      border-radius:50%;
+      background:#94a3b8;
+      opacity:.6;
+      animation:blink 1.4s infinite ease-in-out;
+    }
+    .typing span:nth-child(2){animation-delay:.2s}
+    .typing span:nth-child(3){animation-delay:.4s}
+    @keyframes blink{
+      0%,80%,100%{transform:translateY(0)}
+      40%{transform:translateY(-3px)}
+    }
+
+    .chat__actions{
+      padding:12px;
+      border-top:1px solid var(--line);
+      display:flex;
+      flex-direction:column;
+      gap:10px;
+      background:#fff;
+    }
+    .chips{
+      display:flex;
+      gap:8px;
+      flex-wrap:wrap;
+    }
+    .chip{
+      min-height:40px;
+      padding:9px 14px;
+      border-radius:999px;
+      border:1px solid var(--line);
+      background:#fff;
+      color:var(--text);
+      cursor:pointer;
+      transition:.2s;
+      font-weight:600;
+    }
+    .chip:hover{
+      border-color:rgba(31,94,142,0.35);
+      color:var(--primary);
+    }
+
+    /* Side */
+    .side{
+      display:flex;
+      flex-direction:column;
+      gap:12px;
+    }
+    .card{
+      background:#fff;
+      border:1px solid var(--line);
+      border-radius:var(--radius);
+      padding:16px;
+      box-shadow:var(--shadow-soft);
+    }
+    .card h3{
+      margin:0 0 8px;
+      font-size:16px;
+    }
+    .list{
+      margin:0;
+      padding-left:18px;
+      color:var(--muted);
+      font-size:14px;
+    }
+    .list li{margin:6px 0}
+
+    .brands{
+      display:grid;
+      grid-template-columns:repeat(3, 1fr);
+      gap:8px;
+    }
+    .brands__item{
+      height:54px;
+      border:1px solid var(--line);
+      border-radius:10px;
+      background:#f8fafc;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      padding:6px;
+      transition:.2s;
+    }
+    .brands__item:hover{transform:translateY(-2px)}
+    .brands__item img{
+      max-height:36px;
+      object-fit:contain;
+      filter:grayscale(20%);
+      opacity:.9;
+    }
+
+    /* Cookie */
+    .cookie{
+      position:fixed;
+      left:16px;
+      right:16px;
+      bottom:16px;
+      z-index:110;
+      max-width:680px;
+      margin:0 auto;
+      display:flex;
+      align-items:center;
+      gap:12px;
+      justify-content:space-between;
+      background:#fff;
+      border:1px solid var(--line);
+      border-radius:12px;
+      padding:12px 12px 12px 14px;
+      box-shadow:var(--shadow);
+    }
+    .cookie p{
+      margin:0;
+      font-size:14px;
+      color:var(--muted);
+    }
+    .cookie a{color:var(--primary)}
+    .cookie .btn{height:38px}
+
+    /* Policy popup */
+    .overlay{
+      position:fixed;
+      inset:0;
+      background:rgba(15,23,42,0.6);
+      z-index:120;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      padding:16px;
+    }
+    .popup{
+      width:min(720px, 92vw);
+      max-height:82vh;
+      overflow:auto;
+      background:#fff;
+      border-radius:16px;
+      padding:18px;
+      position:relative;
+      box-shadow:var(--shadow);
+    }
+    .popup__close{
+      position:absolute;
+      top:10px;
+      right:12px;
+      border:0;
+      background:transparent;
+      font-size:22px;
+      cursor:pointer;
+      color:#64748b;
+    }
+
+    /* Footer dark */
+    .footer{
+      background:#0e1b2b;
+      color:#fff;
+      padding:28px 0;
+      margin-top:28px;
+    }
+    .footer__top{
+      display:grid;
+      grid-template-columns:1.1fr .9fr 1fr;
+      gap:16px;
+      align-items:start;
+      margin-bottom:16px;
+    }
+    .footer__brand{
+      display:flex;
+      align-items:flex-start;
+      gap:12px;
+    }
+    .footer__logo{
+      width:52px;
+      height:52px;
+      border-radius:10px;
+      background:rgba(255,255,255,0.08);
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      overflow:hidden;
+      flex:0 0 52px;
+    }
+    .footer__logo img{
+      width:100%;
+      height:100%;
+      object-fit:contain;
+    }
+    .footer__brand-text strong{
+      display:block;
+      font-size:17px;
+      margin-bottom:4px;
+    }
+    .footer__brand-text span{
+      color:#cbd5e1;
+      font-size:13px;
+      line-height:1.35;
+    }
+    .footer__h{
+      margin:0 0 8px;
+      font-size:16px;
+    }
+    .footer__list{
+      list-style:none;
+      margin:0;
+      padding:0;
+    }
+    .footer__list li{
+      margin:6px 0;
+      color:#d2d9e1;
+      font-size:14px;
+    }
+    .footer__list a{
+      color:#c9e1f6;
+      text-decoration:none;
+    }
+    .footer__list a:hover{text-decoration:underline}
+    .footer__map{
+      width:100%;
+      height:180px;
+      border-radius:12px;
+      overflow:hidden;
+      border:1px solid rgba(255,255,255,0.2);
+      background:#13253a;
+    }
+    .footer__bottom{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:12px;
+      border-top:1px solid rgba(255,255,255,0.12);
+      padding-top:12px;
+      flex-wrap:wrap;
+    }
+    .footer__copy{
+      color:#cbd5e1;
+      font-size:13px;
+    }
+    .footer__link{
+      color:#c9e1f6;
+      text-decoration:none;
+      font-size:13px;
+    }
+    .footer__link:hover{text-decoration:underline}
+
+    @media (max-width:980px){
+      .chat-wrap{grid-template-columns:1fr}
+      .footer__top{grid-template-columns:1fr 1fr}
+    }
+
+    @media (max-width:760px){
+      .header__row{min-height:74px}
+      .brand__logo{
+        width:60px;
+        height:60px;
+        flex-basis:60px;
+      }
+      .header__phone{display:none}
+      .footer__top{grid-template-columns:1fr}
+      .cookie{
+        left:10px;
+        right:10px;
+        flex-direction:column;
+        align-items:flex-start;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header class="header">
+    <div class="container header__row">
+      <a class="brand" href="#">
+        <div class="brand__logo">
+          <img src="img/logo.png" alt="SkyTrade" />
+        </div>
+        <div class="brand__text">
+          <strong>SkyTrade</strong>
+          <span>Химические анкера оптом</span>
+        </div>
+      </a>
+      <div class="header__cta">
+        <a class="header__phone" href="tel:+74957241180">+7 (495) 724‑11‑80</a>
+        <a class="btn btn--primary" href="#chat">Получить КП</a>
+      </div>
+    </div>
+  </header>
+
+  <section class="utp">
+    <div class="container">
+      <div class="utp__box">
+        <h1 class="utp__title">Подберём <span>химический анкер</span> под вашу задачу и подготовим КП за 1 обращение</h1>
+        <p class="utp__text">Подбор по основанию, условиям монтажа и диаметру шпильки. Сертифицированные решения для бетона, кирпича и газобетона с доставкой по РФ.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="hero">
+    <div class="container">
+      <h2 class="hero__title">Ответьте на несколько вопросов в чате</h2>
+      <p class="hero__muted">Предложим подходящий состав, рассчитаем расход и поможем быстро получить коммерческое предложение.</p>
+      <ul class="badges">
+        <li class="badge">15+ лет на рынке</li>
+        <li class="badge">Сертифицированная продукция</li>
+        <li class="badge">Доставка по РФ и СНГ</li>
+      </ul>
+
+      <div class="chat-wrap">
+        <div class="chat" id="chat">
+          <div class="chat__head">
+            <div class="bot-avatar">
+              <img src="img/logo-chat.png" alt="SkyTrade bot" />
+            </div>
+            <div>
+              <div class="chat__title">SkyBot • подбор анкеров</div>
+              <div class="chat__sub">Онлайн-помощник отвечает в течение нескольких секунд</div>
+            </div>
+          </div>
+
+          <div class="chat__progress">
+            <span class="chat__bar" id="chatBar"></span>
+          </div>
+
+          <div class="chat__body" id="chatBody" aria-live="polite" aria-atomic="false"></div>
+
+          <div class="chat__actions">
+            <div class="chips" id="quickReplies"></div>
+          </div>
+        </div>
+
+        <aside class="side">
+          <div class="card">
+            <h3>Почему с нами удобно</h3>
+            <ul class="list">
+              <li>Поставка со склада в день оплаты</li>
+              <li>Документы: сертификаты, паспорта, протоколы</li>
+              <li>Подбор и расчёт под нагрузки и основание</li>
+              <li>Работаем с НДС/без НДС, доставка по РФ</li>
+            </ul>
+          </div>
+
+          <div class="card">
+            <h3>Бренды</h3>
+            <div class="brands">
+              <div class="brands__item"><img src="img/brands/11_logo_SORMAT.png" alt="Sormat"></div>
+              <div class="brands__item"><img src="img/brands/12_logo_HILTI.webp" alt="HILTI"></div>
+              <div class="brands__item"><img src="img/brands/33_logo_FISCHER.png" alt="Fischer"></div>
+              <div class="brands__item"><img src="img/brands/24_logo_UTECH.png" alt="UTECH"></div>
+              <div class="brands__item"><img src="img/brands/34_logo_DAXMER.svg" alt="Daxmer"></div>
+              <div class="brands__item"><img src="img/brands/22_logo_HIMTEX.webp" alt="HIMTEX"></div>
+            </div>
+          </div>
+        </aside>
+      </div>
+    </div>
+  </section>
+
+  <div class="cookie" id="cookie" hidden>
+    <p>Мы используем cookies для улучшения работы сайта. Продолжая пользоваться сайтом, вы соглашаетесь с нашей <a href="#" id="openPolicy2">политикой конфиденциальности</a>.</p>
+    <button id="cookieAccept" class="btn btn--primary">Принять</button>
+  </div>
+
+  <div class="overlay" id="policyOverlay" hidden>
+    <div class="popup" role="dialog" aria-modal="true" aria-labelledby="policyTitle">
+      <button class="popup__close" id="policyClose" aria-label="Закрыть">✕</button>
+      <h2 id="policyTitle" style="margin:0 0 8px;">Политика конфиденциальности</h2>
+      <div class="popup__body" style="color:var(--muted); font-size:14px;">
+        <p>Здесь размещается актуальный текст политики конфиденциальности вашей компании. Укажите, какие данные собираете и как обрабатываете.</p>
+      </div>
+    </div>
+  </div>
+
+  <footer class="footer">
+    <div class="container">
+      <div class="footer__top">
+        <div>
+          <div class="footer__brand">
+            <div class="footer__logo">
+              <img src="img/logo.svg" alt="SkyTrade">
+            </div>
+            <div class="footer__brand-text">
+              <strong>SkyTrade</strong>
+              <span>Поставки химических анкеров, комплектующих и инженерных решений для монтажа по всей России.</span>
+            </div>
+          </div>
+        </div>
+
+        <div>
+          <h3 class="footer__h">Контакты</h3>
+          <ul class="footer__list">
+            <li><a href="tel:+74957241180">+7 (495) 724‑11‑80</a></li>
+            <li><a href="mailto:info@skytrade.example">info@skytrade.example</a></li>
+            <li>Пн–Пт: 09:00–18:00</li>
+            <li>Москва</li>
+          </ul>
+        </div>
+
+        <div>
+          <h3 class="footer__h">Информация</h3>
+          <ul class="footer__list">
+            <li><a href="#chat">Получить КП</a></li>
+            <li><a href="#" id="openPolicy3">Политика конфиденциальности</a></li>
+            <li><a href="tel:+74957241180">Связаться с менеджером</a></li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="footer__map">
+<div style="position:relative;overflow:hidden;"><a href="https://yandex.ru/maps/org/skay_treyd/1254708445/?utm_medium=mapframe&utm_source=maps" style="color:#eee;font-size:12px;position:absolute;top:0px;">Скай Трейд</a><a href="https://yandex.ru/maps/213/moscow/category/fasteners/184106650/?utm_medium=mapframe&utm_source=maps" style="color:#eee;font-size:12px;position:absolute;top:14px;">Крепёжные изделия в Москве</a><a href="https://yandex.ru/maps/213/moscow/category/ropes_cables_cords/184106522/?utm_medium=mapframe&utm_source=maps" style="color:#eee;font-size:12px;position:absolute;top:28px;">Верёвки, канаты, тросы в Москве</a><iframe src="https://yandex.ru/map-widget/v1/?ll=37.449336%2C55.523050&mode=search&oid=1254708445&ol=biz&z=17.13" width="560" height="400" frameborder="1" allowfullscreen="true" style="position:relative;"></iframe></div>
+      </div>
+
+      <div class="footer__bottom">
+        <div class="footer__copy">© SkyTrade, 2010–2026. Все права защищены.</div>
+        <a href="#" class="footer__link" id="openPolicy4">Политика конфиденциальности</a>
+      </div>
+    </div>
+  </footer>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const policyOverlay = document.getElementById('policyOverlay');
+
+      function openPolicy(e){
+        e?.preventDefault();
+        policyOverlay.removeAttribute('hidden');
+      }
+
+      function closePolicy(){
+        policyOverlay.setAttribute('hidden','');
+      }
+
+      document.getElementById('openPolicy2')?.addEventListener('click', openPolicy);
+      document.getElementById('openPolicy3')?.addEventListener('click', openPolicy);
+      document.getElementById('openPolicy4')?.addEventListener('click', openPolicy);
+      document.getElementById('policyClose')?.addEventListener('click', closePolicy);
+
+      policyOverlay?.addEventListener('click', (e)=>{
+        if(e.target === policyOverlay) closePolicy();
+      });
+
+      document.addEventListener('keydown', (e)=>{
+        if(e.key === 'Escape' && !policyOverlay.hidden) closePolicy();
+      });
+
+      const cookie = document.getElementById('cookie');
+      const cookieAccept = document.getElementById('cookieAccept');
+
+      if (!localStorage.getItem('cookieConsent')) {
+        cookie.hidden = false;
+      }
+
+      cookieAccept?.addEventListener('click', ()=>{
+        localStorage.setItem('cookieConsent', 'true');
+        cookie.hidden = true;
+      });
+
+      const chatBody = document.getElementById('chatBody');
+      const quickReplies = document.getElementById('quickReplies');
+      const bar = document.getElementById('chatBar');
+
+      const answers = {};
+      let stepIndex = 0;
+      const totalSteps = 4;
+
+      const recs = {
+        'ITH 300 Ve': {
+          name: 'ITH 300 Ve',
+          desc: 'Универсальный винилэстеровый анкер под бетон',
+          img: 'img/anchors/ITH-300-Ve-300x107.png'
+        },
+        'ITH 410 Ve': {
+          name: 'ITH 410 Ve',
+          desc: 'Для высоких нагрузок и больших диаметров в бетоне',
+          img: 'img/anchors/ITH-410-Ve-1-300x117.png'
+        },
+        'ITH 585 EPOXe': {
+          name: 'ITH 585 EPOXe',
+          desc: 'Чистый эпоксид для влажных условий и тяжелых конструкций',
+          img: 'img/anchors/ITH-585-EPOXe-A-300x101.png'
+        },
+        'ITH 300 Wi': {
+          name: 'ITH 300 Wi',
+          desc: 'Зимняя формула для работы при отрицательных температурах',
+          img: 'img/anchors/ITH-300-Wi-1-300x92.png'
+        },
+        'ITH 410 Wi': {
+          name: 'ITH 410 Wi + гильзы ISH/IOV',
+          desc: 'Зимний состав увеличенного объема для кладочных материалов',
+          img: 'img/anchors/ITH-410-Wi-1-300x110.png'
+        },
+        'ITH 165 Pe': {
+          name: 'ITH 165 Pe + гильзы ISH/IOV',
+          desc: 'Экономичный полиэстеровый состав для кирпича',
+          img: 'img/anchors/ITH-165-Pe-300x108.png'
+        },
+        'ITH 410 Pe': {
+          name: 'ITH 410 Pe + гильзы IOV',
+          desc: 'Оптимальный состав для ячеистого бетона (газобетона)',
+          img: 'img/anchors/ITH-410-Pe-300x114.png'
+        }
+      };
+
+      function getRecKey(a){
+        const base = a['1'];
+        const cond = a['2'];
+        const dia  = a['3'];
+
+        if (base === 'бетон' && cond === 'обычные' && dia === 'м8-м12') return 'ITH 300 Ve';
+        if (base === 'бетон' && cond === 'обычные' && dia !== 'м8-м12') return 'ITH 410 Ve';
+        if (base === 'бетон' && cond === 'мокрые') return 'ITH 585 EPOXe';
+        if (base === 'бетон' && cond === 'зима') return 'ITH 300 Wi';
+        if (base === 'кирпич' && cond === 'зима') return 'ITH 410 Wi';
+        if (base === 'кирпич') return 'ITH 165 Pe';
+        if (base === 'газобетон') return 'ITH 410 Pe';
+
+        return 'ITH 300 Ve';
+      }
+
+      function nowTime(){
+        const d = new Date();
+        return d.toLocaleTimeString('ru-RU', {hour:'2-digit', minute:'2-digit'});
+      }
+
+      function scrollToBottom(){
+        chatBody.scrollTop = chatBody.scrollHeight + 1000;
+      }
+
+      function addTyping(){
+        const wrap = document.createElement('div');
+        wrap.className = 'msg msg--bot';
+        wrap.dataset.typing = '1';
+        wrap.innerHTML = `
+          <div class="bot-avatar" aria-hidden="true" style="width:28px;height:28px;flex:0 0 28px;"></div>
+          <div class="msg__bubble">
+            <div class="typing" aria-hidden="true"><span></span><span></span><span></span></div>
+          </div>
+          <div class="msg__time">${nowTime()}</div>
+        `;
+        chatBody.appendChild(wrap);
+        scrollToBottom();
+        return wrap;
+      }
+
+      function removeTyping(node){
+        node?.remove();
+      }
+
+      function addMsg(text, from='bot', html=false){
+        const wrap = document.createElement('div');
+        wrap.className = 'msg ' + (from === 'bot' ? 'msg--bot' : 'msg--user');
+
+        const bubble = document.createElement('div');
+        bubble.className = 'msg__bubble';
+        if (html) {
+          bubble.innerHTML = text;
+        } else {
+          bubble.textContent = text;
+        }
+
+        const time = document.createElement('div');
+        time.className = 'msg__time';
+        time.textContent = nowTime();
+
+        if (from === 'bot'){
+          const avatar = document.createElement('div');
+          avatar.className = 'bot-avatar';
+          avatar.innerHTML = '<img src="img/girl.png" alt="SkyTrade bot"/>';
+          wrap.appendChild(avatar);
+          wrap.appendChild(bubble);
+          wrap.appendChild(time);
+        } else {
+          wrap.appendChild(bubble);
+          wrap.appendChild(time);
+        }
+
+        chatBody.appendChild(wrap);
+        scrollToBottom();
+      }
+
+      function addProductMsg(rec){
+        const wrap = document.createElement('div');
+        wrap.className = 'msg msg--bot';
+        wrap.innerHTML = `
+          <div class="bot-avatar"><img src="img/logo.svg" alt="SkyTrade bot"/></div>
+          <div class="msg__bubble">
+            <div class="msg__product">
+              <div class="msg__product-img"><img src="${rec.img}" alt="${rec.name}"></div>
+              <div>
+                <h4>${rec.name}</h4>
+                <p>${rec.desc}</p>
+              </div>
+            </div>
+          </div>
+          <div class="msg__time">${nowTime()}</div>
+        `;
+        chatBody.appendChild(wrap);
+        scrollToBottom();
+      }
+
+      function setProgress(stepIdx){
+        const percent = Math.round((stepIdx) / (totalSteps - 1) * 100);
+        bar.style.width = percent + '%';
+      }
+
+      function setQuickReplies(list){
+        quickReplies.innerHTML = '';
+        list.forEach(opt => {
+          const b = document.createElement('button');
+          b.type = 'button';
+          b.className = 'chip';
+          b.textContent = opt.label;
+          b.dataset.value = opt.value;
+          b.addEventListener('click', ()=>{
+            handleUserChoice(opt.value, opt.label);
+          });
+          quickReplies.appendChild(b);
+        });
+      }
+
+      function askStep1(){
+        setProgress(0);
+        const t = addTyping();
+        setQuickReplies([]);
+
+        setTimeout(()=>{
+          removeTyping(t);
+          addMsg('Начнём. Выберите материал основания:', 'bot');
+          setQuickReplies([
+            {label:'Бетон', value:'бетон'},
+            {label:'Кирпич', value:'кирпич'},
+            {label:'Газобетон', value:'газобетон'}
+          ]);
+        }, 600);
+      }
+
+      function askStep2(){
+        setProgress(1);
+        const t = addTyping();
+        setQuickReplies([]);
+
+        setTimeout(()=>{
+          removeTyping(t);
+          addMsg('Условия монтажа?', 'bot');
+          setQuickReplies([
+            {label:'Обычные', value:'обычные'},
+            {label:'Мокрые отверстия', value:'мокрые'},
+            {label:'Низкие температуры (зима)', value:'зима'}
+          ]);
+        }, 600);
+      }
+
+      function askStep3(){
+        setProgress(2);
+        const t = addTyping();
+        setQuickReplies([]);
+
+        setTimeout(()=>{
+          removeTyping(t);
+          addMsg('Диаметр шпильки?', 'bot');
+          setQuickReplies([
+            {label:'М8–М12', value:'м8-м12'},
+            {label:'М16 и выше', value:'м16+'},
+            {label:'Не знаю', value:'не_знаю'}
+          ]);
+        }, 600);
+      }
+
+      function showResult(){
+        setProgress(3);
+        const t = addTyping();
+        setQuickReplies([]);
+
+        setTimeout(()=>{
+          removeTyping(t);
+          const key = getRecKey(answers);
+          const rec = recs[key] || recs['ITH 300 Ve'];
+
+          addMsg('Подходит вариант:', 'bot');
+          addProductMsg(rec);
+
+          addMsg(`
+            <div style="margin-top:8px; font-size:13px; color:#64748b">
+              Оставьте телефон — пришлём расчёт расхода, стоимость комплекта и сроки отгрузки.
+            </div>
+          `, 'bot', true);
+
+          const wrap = document.createElement('div');
+          wrap.className = 'msg msg--bot';
+          wrap.innerHTML = `
+            <div class="bot-avatar"><img src="img/logo.svg" alt="SkyTrade bot"/></div>
+            <div class="msg__bubble">
+              <form action="send.php" method="POST">
+                <input type="hidden" name="title" value="Заявка из чат-лендинга (рекомендация)" />
+                <input type="hidden" name="form_name" value="chat_recommendation" />
+                <input type="hidden" name="rec_product" value="${rec.name}" />
+                <label style="display:block; margin-bottom:8px;">
+                  <input type="tel" name="phone" style="width:100%; height:42px; padding:0 12px; border:1px solid #e2e8f0; border-radius:10px; outline:none;" placeholder="Ваш телефон" required />
+                </label>
+                <button type="submit" class="btn btn--primary btn--full">Получить расчёт и КП</button>
+                <label style="display:flex; gap:8px; font-size:12px; color:#64748b; margin-top:8px;">
+                  <input type="checkbox" checked required />
+                  <span>Согласен с обработкой персональных данных</span>
+                </label>
+              </form>
+              <div style="display:flex; gap:8px; margin-top:10px; flex-wrap:wrap;">
+                <button type="button" id="restartBtn" class="btn btn--ghost" style="flex:1;">Пройти заново</button>
+                <a href="tel:+74957241180" class="btn btn--ghost" style="flex:1; text-align:center;">Позвонить</a>
+              </div>
+            </div>
+            <div class="msg__time">${nowTime()}</div>
+          `;
+          chatBody.appendChild(wrap);
+
+          document.getElementById('restartBtn')?.addEventListener('click', restartFlow);
+          scrollToBottom();
+        }, 700);
+      }
+
+      function handleUserChoice(value, label){
+        addMsg(label, 'user');
+
+        if (stepIndex === 0){
+          answers['1'] = value;
+          stepIndex = 1;
+          askStep2();
+        } else if (stepIndex === 1){
+          answers['2'] = value;
+          stepIndex = 2;
+          askStep3();
+        } else if (stepIndex === 2){
+          answers['3'] = value;
+          stepIndex = 3;
+          showResult();
+        }
+      }
+
+      function restartFlow(){
+        Object.keys(answers).forEach(k => delete answers[k]);
+        stepIndex = 0;
+        chatBody.innerHTML = '';
+        setProgress(0);
+
+        const t = addTyping();
+        setTimeout(()=>{
+          removeTyping(t);
+          addMsg('Здравствуйте! Я помогу подобрать подходящий химический анкер.', 'bot');
+
+          const t2 = addTyping();
+          setTimeout(()=>{
+            removeTyping(t2);
+            addMsg('Ответьте на несколько вопросов — это займёт не больше 30 секунд.', 'bot');
+            askStep1();
+          }, 600);
+        }, 600);
+      }
+
+      restartFlow();
+    });
+  </script>
+</body>
+</html>
